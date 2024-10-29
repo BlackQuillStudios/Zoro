@@ -1,13 +1,20 @@
 import os
-from flask import Flask, request, jsonify
 import google.generativeai as genai
+from flask import Flask, request, jsonify
+from flask_cors import CORS
+import logging
+
+# Set up logging
+logging.basicConfig(filename='chatbot.log', level=logging.DEBUG)
+
+# Hardcoded API key (not recommended for production)
+API_KEY = "AIzaSyCXV30OkrlLxOr6VEnXRjbHTQMEAZtSbIE"
+genai.configure(api_key=API_KEY)
 
 app = Flask(__name__)
+CORS(app)  # Enable CORS for all routes
 
-# Set the API key directly for testing
-genai.configure(api_key='AIzaSyCXV30OkrlLxOr6VEnXRjbHTQMEAZtSbIE')
-
-# Create the model
+# Create the model without safety settings
 generation_config = {
     "temperature": 1,
     "top_p": 0.95,
@@ -26,11 +33,13 @@ model = genai.GenerativeModel(
 @app.route('/chat', methods=['POST'])
 def chat():
     user_input = request.json.get('input')
+    logging.debug(f"User Input: {user_input}")  # Log user input
     chat_session = model.start_chat(history=[
         {"role": "user", "parts": [user_input]},
     ])
     response = chat_session.send_message(user_input)
+    logging.debug(f"Response: {response.text}")  # Log the response
     return jsonify({"response": response.text})
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     app.run(debug=True)
