@@ -1,22 +1,63 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Zoro - Coding Assistant Chatbot</title>
-  <link rel="stylesheet" href="styles.css">
+    <title>Gemini Chatbot</title>
+    <script src="https://cdn.jsdelivr.net/npm/@google/generative-ai@0.0.1-alpha.12/dist/umd/google-generative-ai.min.js"></script>
+    <style>
+        /* ... (your existing CSS styles) */
+    </style>
 </head>
 <body>
-  <div class="chat-container">
-    <h1>Zoro - Your Coding Assistant</h1>
-    <div id="chatbox" class="chatbox">
-      <!-- Messages will be appended here -->
-    </div>
-    <div class="input-area">
-      <input type="text" id="userInput" placeholder="Type your message...">
-      <button onclick="sendMessage()">Send</button>
-    </div>
-  </div>
-  <script src="script.js"></script>
+    <h1>Gemini Chatbot</h1>
+    <div id="chatbox"></div>
+    <input type="text" id="user-input">
+    <button onclick="sendMessage()">Send</button>
+    <script>
+        const apiKey = 'YOUR_API_KEY';  // **REPLACE WITH YOUR ACTUAL API KEY** - Important: Do not expose this in production code.  See below for better key management.
+
+        const genAI = new GoogleGenerativeAI(apiKey);
+        const model = genAI.getGenerativeModel({
+            model: "gemini-1.5-pro-002",
+        });
+        const generationConfig = {
+            temperature: 1,
+            topP: 0.95,
+            topK: 40,
+            maxOutputTokens: 8192,
+            responseMimeType: "text/plain",
+        };
+
+       let chatSession; // Declare chatSession outside
+
+        async function startChat() { //New Function
+            chatSession = model.startChat({
+                generationConfig,
+                history: [],
+            });
+         }
+         startChat(); //Call on page load
+
+        async function sendMessage() {
+            const userInput = document.getElementById('user-input').value;
+            document.getElementById('user-input').value = '';
+            displayMessage(userInput, 'user');
+
+             try {
+               const result = await chatSession.sendMessage(userInput);
+                const botReply = result.response.text();
+                displayMessage(botReply, 'bot');
+            } catch (error) {
+                console.error("Error:", error);
+                displayMessage("An error occurred.", 'bot');
+            }
+
+        }
+
+
+
+        function displayMessage(message, sender) { // (Your existing displayMessage function)
+          // ...
+        }
+    </script>
 </body>
 </html>
