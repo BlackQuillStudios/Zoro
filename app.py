@@ -1,22 +1,24 @@
 import os
 import google.generativeai as genai
-from google.generativeai import types  # Import types
+from google.generativeai import types
 from flask import Flask, render_template, request, jsonify
 from dotenv import load_dotenv
+from flask_frozen import FrozenFlask  # Import Frozen-Flask
 
 load_dotenv()
 
-app = Flask(__name__)
+# Use FrozenFlask instead of Flask
+app = FrozenFlask(__name__)  # Use FrozenFlask
 
-# --- The generate function (from above) ---
+
+# --- The generate function ---
 def generate(user_input):
     client = genai.Client(
         api_key=os.environ.get("AIzaSyCZqsY6xNsNQHUKylCfmvbGdrXuKv9n7v0"),
     )
 
-    model = "gemini-2.0-pro-exp-02-05"  # Using the exact model name provided
+    model = "gemini-2.0-pro-exp-02-05"
 
-    # Load Zoro's instructions
     with open("zoro_instructions.txt", "r") as f:
         zoro_instructions = f.read()
 
@@ -24,27 +26,27 @@ def generate(user_input):
         types.Content(
             role="user",
             parts=[
-                types.Part.from_text(text=f"Sir: {user_input}"), # User input with "Sir:"
+                types.Part.from_text(text=f"Sir: {user_input}"),
             ],
         ),
-        types.Content( #Placeholder for AI
+        types.Content(
             role="model",
             parts=[
                 types.Part.from_text(text=""),
             ]
         )
     ]
+
     generate_content_config = types.GenerateContentConfig(
         temperature=1,
         top_p=0.95,
         top_k=64,
         max_output_tokens=8192,
         system_instruction=[
-            types.Part.from_text(text=zoro_instructions), # System instructions
+            types.Part.from_text(text=zoro_instructions),
         ],
     )
 
-    # Use generate_content_stream for streaming responses
     response_stream = client.models.generate_content_stream(
         model=model,
         contents=contents,
@@ -54,8 +56,7 @@ def generate(user_input):
     full_response = ""
     for chunk in response_stream:
         full_response += chunk.text
-        #print(chunk.text, end="") # Prints as it streams NO NEED TO PRINT HERE
-    return full_response #Return full response
+    return full_response
 
 # --- Flask routes ---
 
@@ -67,11 +68,14 @@ def index():
 def chat():
     try:
         user_message = request.json["message"]
-        ai_response = generate(user_message)  # Call the generate function
+        ai_response = generate(user_message)
         return jsonify({"response": ai_response})
     except Exception as e:
         print(f"Error: {e}")
         return jsonify({"response": "Sorry, I encountered an error."}), 500
-
+# Add the build command
 if __name__ == "__main__":
-    app.run(debug=True)
+    if os.getenv('GITHUB_ACTIONS'):  # Check if running in GitHub Actions
+      app.run() #Still run using app.run()
+    else:
+      app.run(debug=True)
