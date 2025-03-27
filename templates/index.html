@@ -1,0 +1,285 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Zoro - Personal AI Assistant</title>
+  <!-- Link the main structural stylesheet -->
+  <link id="theme-link" rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}" />
+  <!-- Link for the theme stylesheet - Set default theme here -->
+  <link id="theme-style" rel="stylesheet" href="{{ url_for('static', filename='themes/nord.css') }}"> <!-- Example: Default nord -->
+
+  <!-- highlight.js CSS Theme (choose one that matches your theme or preference) -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+  <!-- FontAwesome for Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+  <!-- Basic Inline Styles for New Elements (Move to styles.css for better organization) -->
+  <style>
+    .input-area-wrapper {
+      display: flex;
+      flex-direction: column;
+      align-items: center; /* Center items horizontally */
+      width: 100%; /* Take full width */
+      /* Background/padding handled by form-wrapper now */
+      padding: 0 2rem; /* Maintain horizontal padding */
+      background-color: var(--bg); /* Match main background */
+      border-top: 1px solid var(--border-color);
+      box-shadow: 0 -2px 5px var(--shadow-color);
+      position: sticky; /* Keep input area at bottom */
+      bottom: 0;
+      transition: background-color 0.3s, border-color 0.3s, box-shadow 0.3s;
+    }
+    #image-preview-area {
+        display: none; /* Initially hidden */
+        padding: 0.5rem 0;
+        text-align: center;
+        position: relative;
+        max-width: 800px; /* Match form max-width */
+        width: 100%;
+        margin-left: auto;
+        margin-right: auto;
+    }
+    #image-preview {
+        max-height: 80px; /* Smaller preview */
+        max-width: 90%;
+        border-radius: 4px;
+        border: 1px solid var(--border-color);
+        vertical-align: middle;
+    }
+    #clear-image-btn {
+        position: absolute;
+        top: 8px; /* Adjust positioning */
+        right: 5%; /* Adjust positioning relative to max-width */
+        background: rgba(0,0,0,0.7);
+        color: white;
+        border: none;
+        border-radius: 50%;
+        width: 22px;
+        height: 22px;
+        font-size: 14px;
+        line-height: 20px; /* Center the 'x' */
+        cursor: pointer;
+        padding: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1; /* Ensure it's above the image */
+    }
+    #clear-image-btn:hover {
+        background: rgba(255,0,0,0.7);
+    }
+    /* Style the label like a button */
+    .image-upload-label {
+      display: inline-flex; /* Use flex to center icon */
+      align-items: center;
+      justify-content: center;
+      padding: 0.8rem; /* Match submit button padding */
+      /* background-color: var(--modal-btn-bg); */ /* Optional background */
+      color: var(--text-secondary); /* Use secondary text color */
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 1.1rem; /* Icon size */
+      transition: color 0.2s ease;
+      margin-right: 0.5rem; /* Space between icon and input */
+    }
+    .image-upload-label:hover {
+      color: var(--accent); /* Highlight on hover */
+    }
+    /* Ensure form-wrapper doesn't have conflicting background/border/shadow */
+    .form-wrapper {
+        background-color: transparent; /* Handled by input-area-wrapper */
+        padding: 0.5rem 0 1rem 0; /* Adjust padding - top/bottom */
+        position: static; /* Remove sticky */
+        bottom: auto;
+        box-shadow: none; /* Handled by input-area-wrapper */
+        border-top: none; /* Handled by input-area-wrapper */
+        width: 100%;
+        max-width: 800px; /* Consistent max width */
+    }
+    form#chat-form {
+        /* Existing styles should mostly work */
+        border: 1px solid var(--input-border); /* Re-add border here */
+        background-color: var(--input-bg); /* Re-add background */
+        border-radius: 10px; /* Re-add border-radius */
+        padding: 0.5rem; /* Re-add padding */
+    }
+  </style>
+
+</head>
+<body>
+  <div class="layout"> <!-- This div wraps sidebar, main content, and the canvas panel -->
+
+    <aside class="sidebar" id="sidebar">
+      <!-- Sidebar content -->
+      <div class="sidebar-header">
+        <h2>Chats</h2>
+        <button id="toggle-sidebar" aria-label="Toggle Sidebar">⮜</button>
+      </div>
+      <button id="new-chat" onclick="window.location.href='/new'">+ New Chat</button>
+      <ul id="chat-list">
+        {% for chat_id_loop, chat in saved_chats.items() %} {# Use chat_id_loop to avoid conflict #}
+          <li class="chat-link {% if chat_id_loop == active_chat %}active{% endif %}" data-chat-id="{{ chat_id_loop }}">
+            <div class="chat-entry">
+              <a href="{{ url_for('index', chat_id=chat_id_loop) }}" class="chat-name">{{ chat.title or "New Chat" }}</a> {# Display 'New Chat' if title is empty #}
+              <div class="dropdown-wrapper">
+                <button class="dots-btn" onclick="toggleDropdown(event, '{{ chat_id_loop }}')" aria-label="Chat options">⋯</button>
+                <div class="dropdown" id="dropdown-{{ chat_id_loop }}" style="display: none;">
+                  <form method="post" action="{{ url_for('delete_chat', chat_id=chat_id_loop) }}" onsubmit="return confirm('Are you sure you want to delete this chat?');"> {# Simple confirm for now #}
+                    <button type="submit">Delete</button>
+                  </form>
+                </div>
+              </div>
+            </div>
+          </li>
+        {% else %}
+          {# Optionally display a message if no chats exist #}
+          <li style="color: var(--text-secondary); padding: 1rem; text-align: center; font-style: italic;">No chats yet.</li>
+        {% endfor %}
+      </ul>
+      <!-- onsubmit calls globally defined function for modal confirmation -->
+      <form method="post" action="{{ url_for('delete_all_chats') }}" onsubmit="return confirmDeleteAll();">
+        <button type="submit" class="delete-all-btn" aria-label="Delete All Chats" style="margin: 0 auto; display: block;">🗑️</button>
+      </form>
+    </aside>
+
+    <div class="main-content">
+      <!-- Main chat header -->
+      <header>
+        Zoro - Personal AI Assistant
+        <div class="header-controls"> <!-- Group header icons -->
+            <button id="canvas-list-btn" class="header-icon-btn" aria-label="Open Canvas List"><i class="fa-solid fa-layer-group"></i></button>
+            <button id="settings-btn" class="header-icon-btn" aria-label="Settings">⚙️</button>
+        </div>
+      </header>
+      <!-- Main chat area -->
+      <main>
+        <div class="chat" id="chat">
+          <!-- Chat history rendered by Flask -->
+          {% for pair in chat_history %}
+            <div class="message user">
+              <div class="avatar">Y</div>
+              <div class="message-content">
+                  <span style="font-weight: bold;">You: </span>
+                  <!-- This will display the text, including '[Image attached]' if present -->
+                  <div style="display: inline;">{{ pair['user'] | e }}</div>
+              </div>
+            </div>
+            <div class="message bot" data-needs-processing="true"> {# Ensure this attribute exists for JS #}
+              <div class="avatar">Z</div>
+              <div class="message-content">
+                  <span style="font-weight: bold;">Zoro: </span>
+                  <div class="message-body-raw" style="display: inline;">{{ pair['bot'] | e }}</div>
+              </div>
+              {% if pair['time'] %}<span class="response-time">{{ pair['time'] }}</span>{% endif %}
+            </div>
+          {% endfor %}
+        </div>
+
+        <!-- UPDATED Clear Chat Form -->
+        <form class="clear-chat" action="{{ url_for('clear_chat_history', chat_id=active_chat) }}" method="get" onsubmit="return confirm('Are you sure you want to clear the history for this chat?');"> {# Simple confirm for now #}
+             {# chat_id is now part of the URL #}
+             <button type="submit" class="clear-chat-button">Clear Chat History</button> {# Changed class slightly #}
+        </form>
+
+        <!-- MODIFIED: Input Area -->
+        <div class="input-area-wrapper"> <!-- New wrapper -->
+
+            <!-- Image Preview Area -->
+            <div id="image-preview-area">
+                <img id="image-preview" src="#" alt="Image preview"/>
+                <button id="clear-image-btn" aria-label="Clear selected image">×</button>
+            </div>
+
+            <!-- Original Form Wrapper -->
+            <div class="form-wrapper">
+              <form id="chat-form" autocomplete="off">
+                <!-- ADDED: File Input Button/Label -->
+                <label for="image-upload" class="image-upload-label" aria-label="Attach Image" title="Attach Image">
+                    <i class="fa-solid fa-paperclip"></i>
+                </label>
+                <input type="file" name="image" id="image-upload" accept="image/jpeg, image/png, image/webp, image/heic, image/heif" style="display: none;"/>
+
+                <!-- UPDATED: Text Input -->
+                <input type="text" name="input" id="chat-input" placeholder="Ask Zoro anything, or attach an image..." autofocus /> {# Removed 'required' temporarily to allow sending image only #}
+                <input type="submit" value="Send" />
+              </form>
+            </div>
+        </div> <!-- End input-area-wrapper -->
+
+      </main>
+    </div>
+
+    <!-- ADDED: Canvas Panel Structure -->
+    <aside class="canvas-panel" id="canvas-panel" style="display: none;"> <!-- Initially hidden -->
+        <div class="canvas-panel-header">
+            <span class="canvas-panel-icon" id="canvas-panel-icon"><i class="fa-solid fa-pen-to-square"></i></span> <!-- Default Icon -->
+            <span class="canvas-panel-title" id="canvas-panel-title">Canvas</span> <!-- Default Title -->
+            <div class="canvas-panel-controls">
+                <button id="canvas-copy-button" class="canvas-control-btn" aria-label="Copy Content" style="display: none;"><i class="fa-regular fa-copy"></i></button>
+                <button id="canvas-close-button" class="canvas-control-btn" aria-label="Close Canvas"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+        </div>
+        <div class="canvas-panel-content" id="canvas-panel-content" spellcheck="false">
+            <!-- Canvas content (editable div or pre/code) added by JS -->
+        </div>
+        <div class="canvas-panel-resizer" id="canvas-resizer"></div> <!-- Optional: Resizer handle -->
+    </aside>
+    <!-- End Canvas Panel -->
+
+  </div><!-- End Layout -->
+
+
+  <!-- Settings Modal -->
+  <div id="settings-overlay" class="modal-overlay" style="display: none;">
+    <div class="modal-box settings-box">
+      <h2>Settings</h2>
+      <div class="settings-options">
+        <label for="theme-select">Theme:</label>
+        <select id="theme-select" class="theme-select-dropdown">
+          <!-- Options populated by JS -->
+        </select>
+      </div>
+      <div class="modal-buttons">
+          <button id="close-settings-btn">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Delete All Confirmation Modal -->
+  <div id="delete-all-overlay" class="modal-overlay confirmation-overlay" style="display: none;">
+      <div class="modal-box confirmation-box">
+        <h2>Confirm Deletion</h2>
+        <p>Are you sure you want to delete all chats?</p>
+        <p>This action cannot be undone.</p>
+        <div class="modal-buttons confirmation-buttons">
+           <!-- onclick calls globally defined functions -->
+          <button class="confirm-delete-btn" onclick="proceedDeleteAll()">Yes, Delete All</button>
+          <button class="cancel-btn" onclick="cancelDeleteAll()">Cancel</button>
+        </div>
+      </div>
+  </div>
+
+
+  <!-- JS Libraries (Place BEFORE main.js) -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.6/purify.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+
+  <!-- Your Main JavaScript File -->
+  <script src="{{ url_for('static', filename='main.js') }}"></script>
+
+  <!-- Canvas List Modal -->
+  <div id="canvas-list-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-box">
+      <h2>Canvases in this Chat</h2>
+      <ul id="canvas-list-container" class="canvas-list"></ul>
+      <div class="modal-buttons">
+        <button onclick="document.getElementById('canvas-list-modal').style.display='none'">Close</button>
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>
