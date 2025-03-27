@@ -14,14 +14,14 @@
   <!-- FontAwesome for Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
-  <!-- Basic Inline Styles for New Elements (Move to styles.css for better organization) -->
+  <!-- Basic Inline Styles + Media Queries for Mobile Support -->
   <style>
+    /* Existing Styles (No changes here, just including for context) */
     .input-area-wrapper {
       display: flex;
       flex-direction: column;
       align-items: center; /* Center items horizontally */
       width: 100%; /* Take full width */
-      /* Background/padding handled by form-wrapper now */
       padding: 0 2rem; /* Maintain horizontal padding */
       background-color: var(--bg); /* Match main background */
       border-top: 1px solid var(--border-color);
@@ -69,13 +69,11 @@
     #clear-image-btn:hover {
         background: rgba(255,0,0,0.7);
     }
-    /* Style the label like a button */
     .image-upload-label {
       display: inline-flex; /* Use flex to center icon */
       align-items: center;
       justify-content: center;
       padding: 0.8rem; /* Match submit button padding */
-      /* background-color: var(--modal-btn-bg); */ /* Optional background */
       color: var(--text-secondary); /* Use secondary text color */
       border: none;
       border-radius: 6px;
@@ -87,7 +85,6 @@
     .image-upload-label:hover {
       color: var(--accent); /* Highlight on hover */
     }
-    /* Ensure form-wrapper doesn't have conflicting background/border/shadow */
     .form-wrapper {
         background-color: transparent; /* Handled by input-area-wrapper */
         padding: 0.5rem 0 1rem 0; /* Adjust padding - top/bottom */
@@ -99,11 +96,186 @@
         max-width: 800px; /* Consistent max width */
     }
     form#chat-form {
-        /* Existing styles should mostly work */
         border: 1px solid var(--input-border); /* Re-add border here */
         background-color: var(--input-bg); /* Re-add background */
         border-radius: 10px; /* Re-add border-radius */
         padding: 0.5rem; /* Re-add padding */
+    }
+
+    /* ---------- MEDIA QUERIES FOR MOBILE ---------- */
+    @media (max-width: 768px) { /* Adjust breakpoint as needed */
+      body {
+        font-size: 1rem; /* Slightly smaller base font on mobile */
+      }
+
+      .layout {
+        flex-direction: column; /* Stack sidebar and main content vertically on mobile */
+      }
+
+      .sidebar {
+        position: fixed; /* Make sidebar fixed for overlay effect */
+        top: 0;
+        left: 0;
+        height: 100%;
+        width: 250px; /* Adjust sidebar width for mobile */
+        z-index: 100; /* Ensure sidebar is on top of other content */
+        transform: translateX(-100%); /* Initially hide sidebar off-screen */
+        transition: transform 0.3s ease-in-out;
+        box-shadow: 2px 0 5px rgba(0, 0, 0, 0.3); /* Add shadow when sidebar is visible */
+        overflow-y: auto; /* Allow scrolling in sidebar if content is long */
+      }
+
+      .sidebar.open {
+        transform: translateX(0); /* Slide sidebar in when open class is added */
+      }
+
+      .sidebar-header {
+        padding: 1rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      #toggle-sidebar {
+        display: block; /* Show toggle button on mobile */
+        margin-left: 0; /* Reset margin */
+        font-size: 1.5rem; /* Larger toggle button for touch */
+        background: none;
+        color: var(--text-primary);
+        border: none;
+        cursor: pointer;
+        padding: 0.5rem;
+      }
+
+      .sidebar h2 {
+        margin: 0; /* Reset header margin */
+        font-size: 1.4rem;
+      }
+
+      #new-chat, .delete-all-btn {
+        padding: 0.75rem 1rem; /* Adjust button padding for mobile */
+        font-size: 1rem;
+      }
+
+      #chat-list li a {
+        padding: 0.75rem 1rem; /* Adjust chat link padding */
+        font-size: 1rem;
+      }
+
+      .main-content {
+        width: 100%; /* Main content takes full width on mobile */
+        margin-left: 0; /* Reset margin */
+      }
+
+      header {
+        padding: 0.5rem 1rem; /* Adjust header padding for mobile */
+        font-size: 1.2rem; /* Slightly smaller header font on mobile */
+        display: flex;
+        justify-content: space-between; /* Keep controls on the right */
+        align-items: center;
+      }
+
+      .header-controls {
+        /* Already styled, no major changes needed unless specific mobile adjustments */
+      }
+
+      main {
+        padding: 1rem; /* Adjust main content padding for mobile */
+      }
+
+      .chat {
+        padding: 1rem 0; /* Adjust chat padding */
+      }
+
+      .message {
+        padding: 0.75rem 1rem; /* Adjust message padding */
+        margin-bottom: 0.75rem; /* Adjust message margin */
+        font-size: 1rem; /* Message text size */
+      }
+
+      .message-content {
+        font-size: 1rem; /* Message content text size */
+      }
+
+      .avatar {
+        width: 30px; /* Smaller avatars on mobile */
+        height: 30px;
+        font-size: 0.9rem;
+        line-height: 30px;
+      }
+
+      .input-area-wrapper {
+        padding: 0 1rem; /* Reduce horizontal padding in input area */
+      }
+
+      .form-wrapper {
+        padding: 0.5rem 0 0.5rem 0; /* Reduce form wrapper padding */
+      }
+
+      form#chat-form {
+        padding: 0.3rem; /* Reduce form padding */
+      }
+
+      #chat-input {
+        font-size: 1rem; /* Input text size */
+        padding: 0.6rem; /* Adjust input padding */
+      }
+
+      input[type="submit"], .image-upload-label {
+        padding: 0.6rem 0.8rem; /* Adjust submit button/label padding */
+        font-size: 1rem;
+      }
+
+      #clear-chat-button {
+        padding: 0.6rem 0.8rem;
+        font-size: 0.9rem;
+      }
+
+      .canvas-panel {
+        position: fixed; /* Canvas panel as overlay on mobile */
+        top: 0;
+        right: 0;
+        height: 100%;
+        width: 90%; /* Adjust canvas panel width on mobile */
+        max-width: 400px; /* Max width for canvas panel on mobile */
+        z-index: 101; /* Higher z-index than sidebar */
+        transform: translateX(100%); /* Initially hide canvas panel off-screen */
+        transition: transform 0.3s ease-in-out;
+        box-shadow: -2px 0 5px rgba(0, 0, 0, 0.3);
+      }
+
+      .canvas-panel.open {
+        transform: translateX(0); /* Slide canvas panel in when open */
+      }
+
+      .canvas-panel-header {
+        padding: 0.75rem;
+      }
+
+      .canvas-panel-title, .canvas-panel-icon {
+        font-size: 1.2rem;
+      }
+
+      .canvas-panel-content {
+        padding: 0.5rem;
+        font-size: 0.95rem; /* Slightly smaller canvas content font */
+      }
+
+      .modal-box {
+        width: 90%; /* Adjust modal width on mobile */
+        max-width: 400px;
+        padding: 1.5rem; /* Adjust modal padding */
+      }
+
+      .modal-box h2 {
+        font-size: 1.3rem;
+      }
+
+      .modal-buttons button {
+        padding: 0.75rem 1rem;
+        font-size: 1rem;
+        margin: 0.5rem; /* Add margin between modal buttons */
+      }
     }
   </style>
 
@@ -115,7 +287,7 @@
       <!-- Sidebar content -->
       <div class="sidebar-header">
         <h2>Chats</h2>
-        <button id="toggle-sidebar" aria-label="Toggle Sidebar">⮜</button>
+        <button id="toggle-sidebar" aria-label="Toggle Sidebar">☰</button> <!-- Hamburger icon for mobile -->
       </div>
       <button id="new-chat" onclick="window.location.href='/new'">+ New Chat</button>
       <ul id="chat-list">
@@ -280,6 +452,64 @@
       </div>
     </div>
   </div>
+
+  <div id="mobile-overlay" class="modal-overlay" style="display: none; z-index: 99;"></div> <!-- Overlay for mobile sidebar/canvas panel -->
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const sidebar = document.getElementById('sidebar');
+      const toggleSidebarButton = document.getElementById('toggle-sidebar');
+      const canvasPanel = document.getElementById('canvas-panel');
+      const canvasListButton = document.getElementById('canvas-list-btn');
+      const canvasCloseButton = document.getElementById('canvas-close-button');
+      const mobileOverlay = document.getElementById('mobile-overlay'); // Mobile overlay
+
+      if (toggleSidebarButton) {
+        toggleSidebarButton.addEventListener('click', () => {
+          sidebar.classList.toggle('open');
+          mobileOverlay.style.display = sidebar.classList.contains('open') ? 'block' : 'none'; // Show overlay when sidebar opens
+        });
+      }
+
+      if (canvasListButton) {
+        canvasListButton.addEventListener('click', () => {
+          canvasPanel.classList.add('open');
+          mobileOverlay.style.display = 'block'; // Show overlay when canvas panel opens
+        });
+      }
+
+      if (canvasCloseButton) {
+        canvasCloseButton.addEventListener('click', () => {
+          canvasPanel.classList.remove('open');
+          mobileOverlay.style.display = 'none'; // Hide overlay when canvas panel closes
+        });
+      }
+
+      // Close sidebar or canvas panel when clicking overlay
+      mobileOverlay.addEventListener('click', () => {
+        if (sidebar.classList.contains('open')) {
+          sidebar.classList.remove('open');
+          mobileOverlay.style.display = 'none';
+        }
+        if (canvasPanel.classList.contains('open')) {
+          canvasPanel.classList.remove('open');
+          mobileOverlay.style.display = 'none';
+        }
+      });
+
+      // Hide sidebar on larger screens if it's open (for resize scenarios)
+      window.addEventListener('resize', function() {
+        if (window.innerWidth > 768 && sidebar.classList.contains('open')) {
+          sidebar.classList.remove('open');
+          mobileOverlay.style.display = 'none';
+        }
+        if (window.innerWidth > 768 && canvasPanel.classList.contains('open')) {
+          canvasPanel.classList.remove('open');
+          canvasPanel.style.display = 'none'; // Also hide canvas panel if open on resize to larger screen
+        }
+      });
+    });
+  </script>
 
 </body>
 </html>
