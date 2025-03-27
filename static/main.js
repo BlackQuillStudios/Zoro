@@ -41,7 +41,7 @@ document.addEventListener("DOMContentLoaded", () => {
     };
     const THEME_NAMES = Object.keys(THEME_PATHS);
     const THEME_KEY = 'chat_theme_name';
-    const DEFAULT_THEME = 'nord';
+    const DEFAULT_THEME = 'dark';
     const TYPE_EFFECT_DELAY = 1; // Slightly slower typing? Adjust as needed.
     const MAX_IMAGE_SIZE_MB = 4; // Max image size allowed (adjust as needed for Gemini limits)
 
